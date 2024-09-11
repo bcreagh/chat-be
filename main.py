@@ -52,7 +52,10 @@ def chat(req: ChatReq):
 	resp = "asfd"
 	bot = BotService.get_bot(req.bot)
 	resp = chatgpt.callChatgpt(bot.prompt.replace("$INPUT", req.input).replace("$FORMAT", json.dumps(bot.answer_format)))
-	return {"message": resp}
+	# if resp.startswith("json"):
+	# 	resp = resp[4:][
+	print(resp[0:10])
+	return json.loads(resp)
 
 class BotConfigReq(BaseModel):
     name: str

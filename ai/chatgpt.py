@@ -10,9 +10,8 @@ def callChatgpt(query: str) -> str:
         messages=[{"role": "user", "content": query}],
         stream=True,
     )
-    # resp = ""
-    # for chunk in stream:
-    #     if chunk.choices[0].delta.content is not None:
-    #         resp += chunk.choices[0].delta.content
-    # return resp
-    return "chatgpt"
+    resp = ""
+    for chunk in stream:
+        if chunk.choices[0].delta.content is not None:
+            resp += chunk.choices[0].delta.content
+    return resp
