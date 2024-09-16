@@ -49,12 +49,8 @@ class ChatReq(BaseModel):
 
 @app.post("/chat")
 def chat(req: ChatReq):
-	resp = "asfd"
 	bot = BotService.get_bot(req.bot)
 	resp = chatgpt.callChatgpt(bot.prompt.replace("$INPUT", req.input).replace("$FORMAT", json.dumps(bot.answer_format)))
-	# if resp.startswith("json"):
-	# 	resp = resp[4:][
-	print(resp[0:10])
 	return json.loads(resp)
 
 class BotConfigReq(BaseModel):
@@ -63,3 +59,45 @@ class BotConfigReq(BaseModel):
 @app.get("/botconfigs")
 def botConfigs():
 	return BotService.get_bots()
+
+class TranscriptReq(BaseModel):
+    transcript: str
+    name: str
+
+@app.post("/transcript")
+def transcript(req: TranscriptReq):
+	resp = chatgpt.callChatgpt(req.transcript + 
+	"""
+					 
+		The content above is a transcript from an educational video. Take that content, and:
+		
+		1) Present the content in the style of an informative textbook in the Ukrainian language
+		2) Give a series of questions and answers in the Ukrainian language based on the content that could be used as flashcards
+
+		Your answer should be in json format. Please only give raw json, do not add any prefixes or suffixes to the json.
+
+		The json should be in the following format:
+
+		{
+			"content": "<content of the video in the style of an informative textbook, formatted in markdown.>",
+			"questions": [
+				{
+					"question": "<question 1>",
+					"answer": "<answer 1>"
+				},
+				{
+					"question": "<question 2>",
+					"answer": "<answer 2>"
+				}
+			]
+		}
+	""")
+	result = json.loads(resp)
+	contents_file_name = f"./storage/{req.name}.md"
+	with open(contents_file_name, "w") as file:
+		file.write(result["content"])
+	questions_file_name = f"./storage/{req.name}.txt"
+	with open(questions_file_name, "w") as file:
+		for q in result["questions"]:
+			file.write(f"{q['question']};{q['answer']}\n")
+	return {"message": "success"}

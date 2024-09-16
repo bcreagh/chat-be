@@ -3,10 +3,8 @@ from openai import OpenAI
 def callChatgpt(query: str) -> str:
     client = OpenAI()
 
-    temp = ''
-
     stream = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-4o",
         messages=[{"role": "user", "content": query}],
         stream=True,
     )
