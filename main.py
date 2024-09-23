@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from bot.bots import BotService
 import json
+from ukrainian_word_stress import Stressifier, StressSymbol
 
 class Settings(BaseSettings):
 	chatgpt_key: str
@@ -51,7 +52,10 @@ class ChatReq(BaseModel):
 def chat(req: ChatReq):
 	bot = BotService.get_bot(req.bot)
 	resp = chatgpt.callChatgpt(bot.prompt.replace("$INPUT", req.input).replace("$FORMAT", json.dumps(bot.answer_format)))
-	return json.loads(resp)
+	parsed_resp = json.loads(resp)
+	stressify = Stressifier(on_ambiguity="all", stress_symbol=StressSymbol.CombiningAcuteAccent)
+	parsed_resp["stressed"] = stressify(parsed_resp["ukrainian"])
+	return parsed_resp
 
 class BotConfigReq(BaseModel):
     name: str
@@ -92,12 +96,13 @@ def transcript(req: TranscriptReq):
 			]
 		}
 	""")
+	stressify = Stressifier(on_ambiguity="all", stress_symbol=StressSymbol.CombiningAcuteAccent)
 	result = json.loads(resp)
 	contents_file_name = f"./storage/{req.name}.md"
 	with open(contents_file_name, "w") as file:
-		file.write(result["content"])
+		file.write(stressify(result["content"]))
 	questions_file_name = f"./storage/{req.name}.txt"
 	with open(questions_file_name, "w") as file:
 		for q in result["questions"]:
-			file.write(f"{q['question']};{q['answer']}\n")
+			file.write(f"{stressify(q['question'])};{stressify(q['answer'])}\n")
 	return {"message": "success"}
